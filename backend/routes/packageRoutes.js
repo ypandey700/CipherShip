@@ -1,46 +1,74 @@
 // === File: routes/packageRoutes.js ===
+
 const express = require("express");
-const QRCode = require("qrcode");
-const Package = require("../models/Package");
-const { encrypt, decrypt } = require("../utils/cryptoUtil");
 const router = express.Router();
-// Admin creates package
-router.post("/create", async (req, res) => {
-    try {
-      const { name, phone, address } = req.body;
-      const plainText = JSON.stringify({ name, phone, address });
-      const encryptedData = encrypt(plainText);
-      const newPackage = new Package({ encryptedData });
-      await newPackage.save();
-      const qr = await QRCode.toDataURL(encryptedData);
-      res.json({ id: newPackage._id, qr });
-    } catch (err) {
-      res.status(500).json({ error: "Failed to create package." });
+const Package = require("../models/Package");
+const QRCode = require("qrcode");
+const { encrypt, decrypt } = require("../utils/cryptoUtil");
+const { authorizeRoles, authenticateUser } = require("../middleware/auth");
+
+// Create encrypted package with QR (admin only)
+router.post("/create", authenticateUser, authorizeRoles("admin"), async (req, res) => {
+  const { customerName, customerPhone, customerAddress } = req.body;
+  try {
+    const encryptedData = encrypt(JSON.stringify({ customerName, customerPhone, customerAddress }));
+    const qrCodeDataUrl = await QRCode.toDataURL(encryptedData);
+    const newPackage = new Package({ encryptedData, qrCodeDataUrl });
+    await newPackage.save();
+    res.status(201).json(newPackage);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to create package" });
+  }
+});
+
+// Assign a package to an agent (admin only)
+router.put("/:id/assign", authenticateUser, authorizeRoles("admin"), async (req, res) => {
+  const { agentId } = req.body;
+  try {
+    const updated = await Package.findByIdAndUpdate(req.params.id, { assignedTo: agentId }, { new: true });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to assign package" });
+  }
+});
+
+// Update delivery status (agent only)
+router.put("/:id/status", authenticateUser, authorizeRoles("agent"), async (req, res) => {
+  const { status } = req.body;
+  try {
+    if (!["Pending", "In Transit", "Delivered"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
     }
-  });
-  
-  // Delivery agent fetches encrypted data
-  router.get("/:id", async (req, res) => {
-    try {
-      const pkg = await Package.findById(req.params.id);
-      if (!pkg) return res.status(404).json({ error: "Package not found" });
-      res.json({ encryptedData: pkg.encryptedData });
-    } catch (err) {
-      res.status(500).json({ error: "Failed to fetch package." });
+    const pkg = await Package.findById(req.params.id);
+    if (pkg.assignedTo?.toString() !== req.user.id) {
+      return res.status(403).json({ error: "Unauthorized" });
     }
-  });
-  
-  // Delivery agent decrypts QR data
-  router.post("/decrypt", (req, res) => {
-    try {
-      const { encryptedData } = req.body;
-      const decrypted = decrypt(encryptedData);
-      res.json({ decrypted });
-    } catch (err) {
-      res.status(500).json({ error: "Failed to decrypt." });
-    }
-  });
-  
-  module.exports = router;
-  
-  
+    pkg.deliveryStatus = status;
+    await pkg.save();
+    res.json(pkg);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update status" });
+  }
+});
+
+// Fetch package (any authorized user)
+router.get("/:id", authenticateUser, async (req, res) => {
+  try {
+    const pkg = await Package.findById(req.params.id);
+    res.json(pkg);
+  } catch (err) {
+    res.status(404).json({ error: "Package not found" });
+  }
+});
+
+// Decrypt (agent only)
+router.post("/decrypt", authenticateUser, authorizeRoles("agent"), async (req, res) => {
+  try {
+    const decrypted = decrypt(req.body.encryptedData);
+    res.json({ decrypted });
+  } catch (err) {
+    res.status(400).json({ error: "Decryption failed" });
+  }
+});
+
+module.exports = router;

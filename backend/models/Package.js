@@ -3,8 +3,9 @@ const mongoose = require("mongoose");
 
 const packageSchema = new mongoose.Schema({
   encryptedData: { type: String, required: true },
-  status: { type: String, default: "Pending" },
-  createdAt: { type: Date, default: Date.now }
+  qrCodeDataUrl: String,
+  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  deliveryStatus: { type: String, enum: ["Pending", "In Transit", "Delivered"], default: "Pending" },
 });
 
 module.exports = mongoose.model("Package", packageSchema);
