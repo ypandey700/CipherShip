@@ -1,20 +1,20 @@
 const express = require("express");
+const mongoose = require("mongoose");
+const dotenv = require("dotenv");
+const cors = require("cors");
+const packageRoutes = require("./routes/packageRoutes");
+
+dotenv.config();
 const app = express();
-
-const PORT = process.env.PORT || 3000;
-
-// Middleware to parse JSON requests
+app.use(cors());
 app.use(express.json());
 
-// route you can check in browser using (localhost:3000/)
-app.get("/", (req, res) => {
-  res.send("Secure Delivery API Running");
-});
+mongoose
+  .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.error("MongoDB connection error:", err));
 
-// Starting the server
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`)
-});
+app.use("/api/packages", packageRoutes);
 
-// To start the server go to backend folder in terminal and type (node server.js)
-// Then redirect to localhost:3000/ in your browser
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
