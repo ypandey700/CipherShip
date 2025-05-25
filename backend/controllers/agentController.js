@@ -3,7 +3,8 @@ const AuditLog = require('../models/AuditLog');
 
 const listAssignedPackages = async (req, res) => {
   try {
-    const packages = await Package.find({ assignedAgents: req.user.id }).sort({ createdAt: -1 });
+    // Use req.user._id for Mongo ObjectId consistency
+    const packages = await Package.find({ assignedAgents: req.user._id }).sort({ createdAt: -1 });
     res.json(packages);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching assigned packages' });
@@ -12,8 +13,9 @@ const listAssignedPackages = async (req, res) => {
 
 const getAuditLogs = async (req, res) => {
   try {
-    const logs = await AuditLog.find({ agent: req.user.id })
-      .populate('package', 'customerDataEncrypted status')
+    const logs = await AuditLog.find({ agent: req.user._id })
+      // Populate with correct Package fields: encryptedData and deliveryStatus
+      .populate('package', 'encryptedData deliveryStatus')
       .sort({ timestamp: -1 });
     res.json(logs);
   } catch (err) {

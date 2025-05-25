@@ -59,6 +59,7 @@ export default function CustomerDashboard() {
 
   return (
     <div style={{ padding: "1rem" }}>
+      <h1>Welcome</h1>
       <h2>Your Packages</h2>
       <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "1rem" }}>
         <thead>

@@ -43,9 +43,9 @@ export default function App() {
                 }
               />
               <Route
-                path="/delivery"
+                path="/deliveryAgent"
                 element={
-                  <RoleBasedRoute allowedRoles={["delivery_agent"]}>
+                  <RoleBasedRoute allowedRoles={["deliveryAgent"]}>
                     <DeliveryAgentDashboard />
                   </RoleBasedRoute>
                 }

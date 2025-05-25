@@ -1,41 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useEffect } from 'react';
 import { useToast } from '../hooks/useToast';
 import { useAuth } from '../contexts/AuthContext';
+import useDecryptPackage from '../hooks/useDecryptPackage';
+import api from '../lib/api';
 
 const PackageDetailView = ({ pkg, onStatusUpdated }) => {
   const { token } = useAuth();
   const { showToast } = useToast();
+  const { decryptPackage, decryptedData, loading, error } = useDecryptPackage();
 
-  const [decryptedData, setDecryptedData] = useState(null);
-  const [loadingDecrypt, setLoadingDecrypt] = useState(false);
-  const [statusUpdating, setStatusUpdating] = useState(false);
+  const [statusUpdating, setStatusUpdating] = React.useState(false);
 
   useEffect(() => {
-    if (!pkg) return;
-
-    const decryptData = async () => {
-      setLoadingDecrypt(true);
-      try {
-        const res = await api.post('/packages/decrypt',
-          { packageId: pkg._id, encryptedPayload: pkg.customerDataEncrypted },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setDecryptedData(res.data.decryptedData);
-      } catch (err) {
-        if (err.response?.status === 403) {
-          showToast('Unauthorized to view package details.', 'error');
-        } else {
-          showToast('Failed to decrypt package data.', 'error');
-        }
-        setDecryptedData(null);
-      } finally {
-        setLoadingDecrypt(false);
-      }
-    };
-
-    decryptData();
-  }, [pkg, token, showToast]);
+    if (pkg) {
+      decryptPackage({
+        packageId: pkg._id,
+        encryptedPayload: pkg.customerDataEncrypted
+      });
+    }
+  }, [pkg]);
 
   const updateStatus = async (newStatus) => {
     setStatusUpdating(true);
@@ -60,14 +43,14 @@ const PackageDetailView = ({ pkg, onStatusUpdated }) => {
       <h3>Package Details (ID: {pkg._id})</h3>
       <p><strong>Current Status:</strong> {pkg.status}</p>
 
-      {loadingDecrypt && <p>Decrypting customer data...</p>}
-
+      {loading && <p>Decrypting customer data...</p>}
       {decryptedData && (
         <div>
           <h4>Customer Information:</h4>
           <pre>{JSON.stringify(decryptedData, null, 2)}</pre>
         </div>
       )}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
 
       <div style={{ marginTop: 15 }}>
         <button disabled={statusUpdating || pkg.status === 'delivered'} onClick={() => updateStatus('delivered')}>

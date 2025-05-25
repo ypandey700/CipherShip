@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
 import api from "../lib/api";
 import { Button } from "../components/ui/button";
-import { withRoleProtection, useAuth } from "../contexts/AuthContext";
+import { withRoleProtection } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 import PackageDetailView from "../components/PackageDetailView";
 import AuditLogView from "../components/AuditLogView";
+import QRScanner from "../components/QRScanner";
 import { useToast } from "../hooks/useToast";
+console.log({ PackageDetailView, AuditLogView, QRScanner });
 
 const DeliveryAgentDashboard = () => {
   const { token, logout, user } = useAuth();
@@ -70,6 +73,12 @@ const DeliveryAgentDashboard = () => {
         >
           Delivery History
         </Button>
+        <Button
+          variant={activeTab === "scan" ? "default" : "ghost"}
+          onClick={() => setActiveTab("scan")}
+        >
+          Scan QR
+        </Button>
       </div>
 
       {activeTab === "packages" && (
@@ -104,10 +113,16 @@ const DeliveryAgentDashboard = () => {
       )}
 
       {activeTab === "auditLogs" && <AuditLogView token={token} />}
-
+      {activeTab === "scan" && <QRScanner />}
       <ToastComponent />
     </div>
   );
 };
 
-export default withRoleProtection(DeliveryAgentDashboard, ["delivery_agent"]);
+// Wrapped with role protection for export
+const ProtectedDeliveryAgentDashboard = withRoleProtection(
+  DeliveryAgentDashboard,
+  ["deliveryAgent"]
+);
+
+export default ProtectedDeliveryAgentDashboard;

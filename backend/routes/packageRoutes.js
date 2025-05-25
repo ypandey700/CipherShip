@@ -1,20 +1,23 @@
 const express = require("express");
 const router = express.Router();
+
 const {
   createPackage,
   getAllPackages,
   updatePackageStatus,
-  decryptPackageData
+  decryptPackageData,
 } = require("../controllers/packageController");
+
 const { verifyToken, authorizeRoles } = require("../middleware/authMiddleware");
 
-// ===== Admin Routes =====
+// Admin routes
 router.get("/", verifyToken, authorizeRoles("admin"), getAllPackages);
 router.post("/", verifyToken, authorizeRoles("admin"), createPackage);
-router.patch("/:id/status", verifyToken, authorizeRoles("admin"), updatePackageStatus);
 
-// ===== Delivery Agent Routes =====
+// Combined status update route for admin and deliveryAgent
+router.patch("/:id/status", verifyToken, authorizeRoles("admin", "deliveryAgent"), updatePackageStatus);
+
+// Delivery agent routes
 router.post("/decrypt", verifyToken, authorizeRoles("deliveryAgent"), decryptPackageData);
-router.put("/:id/status", verifyToken, authorizeRoles("deliveryAgent"), updatePackageStatus);
 
 module.exports = router;

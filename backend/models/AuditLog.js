@@ -7,11 +7,11 @@ const AuditLogSchema = new mongoose.Schema({
   agent: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // delivery agent performing action
   action: { 
     type: String, 
-    enum: ['status_update', 'scan', 'other'], // add 'other' or any other action types as needed
+    enum: ['status_update', 'scan', 'other'], 
     required: true 
   },
-  details: { type: String }, // optional description (changed from detail to details for consistency)
-  timestamp: { type: Date, default: Date.now },
+  details: { type: String }, // optional description
+  timestamp: { type: Date, default: Date.now, index: true }, // index for faster time-based queries
 });
 
 module.exports = mongoose.model('AuditLog', AuditLogSchema);

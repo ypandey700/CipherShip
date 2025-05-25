@@ -1,4 +1,4 @@
-// backend/controllers/CustomerController.js
+// backend/controllers/customerController.js
 
 const Package = require("../models/Package");
 

@@ -4,29 +4,51 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 
 const adminRoutes = require('./routes/adminRoutes');
+const agentRoutes = require('./routes/agentRoutes');
+const authRoutes = require('./routes/authRoutes');
+const customerRoutes = require('./routes/customerRoutes');
 const packageRoutes = require('./routes/packageRoutes');
-const agentRoutes = require('./routes/agentRoutes'); // if you have this separately
+
 const errorHandler = require('./middleware/errorHandler');
-const authRoutes = require('./routes/authRoutes'); // Assuming you have an auth route
+
+// Import your models here to ensure indexes
+const User = require('./models/User');
+const Package = require('./models/Package');
+const AuditLog = require('./models/AuditLog');
 
 const app = express();
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Connect to MongoDB
+// Connect to MongoDB and ensure indexes
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(console.error);
+  .then(async () => {
+    console.log('MongoDB connected');
 
-// Mount routes
+    // Ensure indexes for all models before starting server
+    await User.init();
+    await Package.init();
+    await AuditLog.init();
+
+    console.log('Indexes ensured');
+
+    // Start server only after DB ready
+    const PORT = process.env.PORT || 4000;
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  })
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
+  });
+
+// Mount routes (after app initialization is fine)
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/agent', agentRoutes);
+app.use('/api/customer', customerRoutes);
 app.use('/api/packages', packageRoutes);
-app.use('/api/agent', agentRoutes);  // if needed
 
-// Centralized error handling middleware
+// Centralized error handler
 app.use(errorHandler);
-
-const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

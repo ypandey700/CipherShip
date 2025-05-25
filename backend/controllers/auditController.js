@@ -1,4 +1,4 @@
-// controllers/AuditController.js
+// controllers/auditController.js
 const AuditLog = require('../models/AuditLog');
 
 const getAuditLogs = async (req, res, next) => {

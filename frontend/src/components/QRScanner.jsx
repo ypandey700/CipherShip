@@ -1,65 +1,76 @@
-import React, { useState } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import { Html5QrcodeScanner } from "html5-qrcode";
+import api from "../lib/api";
 
 const QRScanner = () => {
   const [scannedData, setScannedData] = useState(null);
   const [decryptedData, setDecryptedData] = useState(null);
-  const [error, setError] = useState('');
-  const [scanning, setScanning] = useState(false);
+  const [error, setError] = useState("");
+  const [processing, setProcessing] = useState(false);
 
-  const token = localStorage.getItem('token');
+  // Get token once on mount (or you can get from context)
+  const token = localStorage.getItem("token");
 
   const onScanSuccess = async (decodedText) => {
-    // Example: QR code payload might be JSON string containing packageId & encryptedPayload
+    if (processing) return; // Avoid multiple simultaneous calls
+    setProcessing(true);
+    setError("");
+    setDecryptedData(null);
+    setScannedData(null);
+
+    let payload;
     try {
-      setScanning(true);
-      setError('');
-      setDecryptedData(null);
+      payload = JSON.parse(decodedText);
+    } catch {
+      setError("Invalid QR code format");
+      setProcessing(false);
+      return;
+    }
 
-      const payload = JSON.parse(decodedText);
-      if (!payload.packageId || !payload.encryptedPayload) {
-        setError('Invalid QR code data');
-        setScanning(false);
-        return;
-      }
+    if (!payload.packageId || !payload.encryptedPayload) {
+      setError("Invalid QR code data");
+      setProcessing(false);
+      return;
+    }
 
-      setScannedData(payload);
+    setScannedData(payload);
 
-      // Send to backend for decryption & authorization
-      const res = await api.post('/packages/decrypt', payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+    try {
+      const res = await api.post(
+        "/packages/decrypt",
+        payload,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setDecryptedData(res.data.decryptedData);
     } catch (err) {
-      if (err.response?.status === 403) setError('Unauthorized to view package');
-      else setError('Decryption failed or invalid QR code');
+      if (err.response?.status === 403) setError("Unauthorized to view package");
+      else setError("Decryption failed or invalid QR code");
     } finally {
-      setScanning(false);
+      setProcessing(false);
     }
   };
 
   const onScanFailure = (error) => {
-    // You can log scan failures here if needed
+    // Optionally log scan failures here or ignore
   };
 
-  React.useEffect(() => {
-    const html5QrcodeScanner = new Html5QrcodeScanner(
-      "qr-reader", 
-      { fps: 10, qrbox: 250 }
-    );
-    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+  useEffect(() => {
+    const scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 });
+    scanner.render(onScanSuccess, onScanFailure);
+
     return () => {
-      html5QrcodeScanner.clear().catch(() => {});
+      scanner.clear().catch(() => {});
     };
   }, []);
 
   return (
     <div>
       <h2>Scan Package QR Code</h2>
-      <div id="qr-reader" style={{ width: '300px' }}></div>
-      {scanning && <p>Scanning and decrypting...</p>}
-      {error && <p style={{color: 'red'}}>{error}</p>}
+      <div id="qr-reader" style={{ width: "300px" }}></div>
+      {processing && <p>Scanning and decrypting...</p>}
+      {error && <p style={{ color: "red" }}>{error}</p>}
       {decryptedData && (
         <div>
           <h3>Decrypted Customer Data</h3>

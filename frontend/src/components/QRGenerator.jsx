@@ -8,6 +8,7 @@ const QRGenerator = () => {
   const { toast } = useToast();
 
   const [form, setForm] = useState({
+    customerId: "",
     customerName: "",
     customerPhone: "",
     customerAddress: "",
@@ -53,9 +54,15 @@ const QRGenerator = () => {
 
     try {
       const res = await api.post("/admin/packages", form);
-      setQrData(res.data.encryptedPackageData); // backend should send this
+      setQrData(res.data.encryptedPackageData); // backend sends this
       toast({ title: "Success", description: "QR code generated." });
-      setForm({ customerName: "", customerPhone: "", customerAddress: "", assignedAgents: [] });
+      setForm({
+        customerId: "",
+        customerName: "",
+        customerPhone: "",
+        customerAddress: "",
+        assignedAgents: []
+      });
     } catch {
       toast({ title: "Error", description: "Package creation failed." });
     } finally {
@@ -68,6 +75,15 @@ const QRGenerator = () => {
       <h2 className="text-xl font-bold mb-4">Generate QR Code for Package</h2>
 
       <form onSubmit={handleSubmit} className="space-y-3">
+        <input
+          name="customerId"
+          placeholder="Customer ID"
+          value={form.customerId}
+          onChange={handleChange}
+          required
+          className="w-full p-2 border rounded"
+        />
+
         <input
           name="customerName"
           placeholder="Customer Name"

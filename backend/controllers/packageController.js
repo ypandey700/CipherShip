@@ -13,11 +13,13 @@ const createPackage = async (req, res, next) => {
       return res.status(400).json({ message: 'Missing required fields or invalid agents list' });
     }
 
+    // Validate agents exist and are delivery agents
     const validAgents = await User.find({ _id: { $in: assignedAgents }, role: 'deliveryAgent' });
     if (validAgents.length !== assignedAgents.length) {
       return res.status(400).json({ message: 'One or more assigned agents are invalid' });
     }
 
+    // Validate customer exists and is a customer role
     const customer = await User.findById(customerId);
     if (!customer || customer.role !== 'customer') {
       return res.status(400).json({ message: 'Invalid customer ID or role' });
@@ -31,7 +33,7 @@ const createPackage = async (req, res, next) => {
       customer: customer._id,
       encryptedData,
       assignedAgents,
-      status: 'pending',
+      deliveryStatus: 'pending',
     });
     await pkg.save();
 
@@ -46,7 +48,7 @@ const createPackage = async (req, res, next) => {
     res.status(201).json({
       message: 'Package created',
       packageId: pkg._id,
-      encryptedPackageData: pkg.encryptedData
+      encryptedPackageData: pkg.encryptedData,
     });
   } catch (err) {
     next(err);
@@ -66,11 +68,15 @@ const getAllPackages = async (req, res, next) => {
   }
 };
 
-// Admin or Agent update status
-const updatePackageStatus = async (req, res) => {
+// Admin or assigned Agent update status
+const updatePackageStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ message: 'Missing status in request body' });
+    }
 
     const pkg = await Package.findById(id);
     if (!pkg) return res.status(404).json({ message: 'Package not found' });
@@ -79,20 +85,28 @@ const updatePackageStatus = async (req, res) => {
     const isAuthorizedAgent = pkg.assignedAgents.some(agentId => agentId.equals(req.user._id));
 
     if (!isAdmin && !isAuthorizedAgent) {
-      return res.status(403).json({ message: 'Unauthorized' });
+      return res.status(403).json({ message: 'Unauthorized to update status' });
     }
 
-    pkg.status = status;
+    pkg.deliveryStatus = status;
     await pkg.save();
 
-    res.json({ message: 'Package status updated' });
+    await AuditLog.create({
+      user: req.user._id,
+      userName: req.user.name,
+      action: 'status_updated',
+      packageId: pkg._id,
+      details: `Status updated to ${status}`,
+    });
+
+    res.json({ message: 'Package status updated', status });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to update status' });
+    next(error);
   }
 };
 
 // Agent decrypts package data
-const decryptPackageData = async (req, res) => {
+const decryptPackageData = async (req, res, next) => {
   try {
     const { packageId } = req.body;
     if (!packageId) return res.status(400).json({ message: 'Missing package ID' });
@@ -105,11 +119,11 @@ const decryptPackageData = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized', encryptedData: pkg.encryptedData });
     }
 
+    // Explicitly pass SECRET_KEY to decrypt util
     const decrypted = decrypt(pkg.encryptedData, process.env.SECRET_KEY);
     res.json({ decryptedData: JSON.parse(decrypted) });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Decryption failed' });
+    next(error);
   }
 };
 
@@ -117,5 +131,5 @@ module.exports = {
   createPackage,
   getAllPackages,
   updatePackageStatus,
-  decryptPackageData
+  decryptPackageData,
 };

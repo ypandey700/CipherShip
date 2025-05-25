@@ -13,7 +13,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { login, isAuthenticated ,loading} = useAuth();
+  const { login, isAuthenticated ,loading } = useAuth();
   const navigate = useNavigate();
 
   // Redirect to home if already authenticated

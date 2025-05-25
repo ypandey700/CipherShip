@@ -5,25 +5,19 @@ const User = require("../models/User");
 
 const router = express.Router();
 
-// JWT auth middleware
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
-
-  if (!token) {
-    return res.status(401).json({ error: "Unauthorized: No token" });
-  }
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: "Unauthorized: No token" });
 
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) {
-      return res.status(403).json({ error: "Forbidden: Invalid token" });
-    }
-    req.user = decoded; // Attach decoded payload (id, role, email)
+    if (err) return res.status(403).json({ error: "Forbidden: Invalid token" });
+    req.user = decoded;
     next();
   });
 }
 
-// POST /api/auth/login
+// Login
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -53,7 +47,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// GET /api/auth/me
+// Get current user
 router.get("/me", authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-passwordHash");
