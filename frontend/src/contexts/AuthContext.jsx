@@ -1,94 +1,77 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { Navigate } from "react-router-dom";
+import api from "../lib/api";
 
-// Create the context with default values
-const AuthContext = createContext({
-  user: null,
-  isAuthenticated: false,
-  login: async () => false,
-  logout: () => {},
-  isLoading: true,
-});
-
-// Sample users for our frontend-only demo
-const SAMPLE_USERS = [
-  { id: "1", email: "admin@example.com", password: "admin123", name: "Admin User", role: "admin" },
-  { id: "2", email: "delivery@example.com", password: "delivery123", name: "Delivery Agent", role: "delivery" },
-  { id: "3", email: "customer@example.com", password: "customer123", name: "Customer", role: "customer" },
-];
+// --- AuthContext & Provider ---
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Optionally: set axios default header with token if stored in localStorage/sessionStorage
+  // api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
+    const fetchUser = async () => {
       try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error("Failed to parse stored user:", error);
-        localStorage.removeItem("user");
+        // Assumes backend returns { user: {...} } if logged in
+        const res = await api.get("/auth/me");
+        if (res.data && res.data.user) {
+          setUser(res.data.user);
+          setIsAuthenticated(true);
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      } catch (err) {
+        setUser(null);
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
       }
-    }
-    setIsLoading(false);
+    };
+    fetchUser();
   }, []);
 
+  // Login function
   const login = async (email, password) => {
-    setIsLoading(true);
-    await new Promise(r => setTimeout(r, 800));
-
-    const foundUser = SAMPLE_USERS.find(
-      (u) => u.email === email && u.password === password
-    );
-
-    if (foundUser) {
-      const userObj = {
-        id: foundUser.id,
-        name: foundUser.name,
-        role: foundUser.role,
-      };
-
-      setUser(userObj);
-      localStorage.setItem("user", JSON.stringify(userObj));
-
-      if (foundUser.role === "admin") {
-        navigate("/admin");
-      } else if (foundUser.role === "delivery") {
-        navigate("/delivery");
-      } else if (foundUser.role === "customer") {
-        navigate("/customer");
+    try {
+      const res = await api.post("/auth/login", { email, password });
+      if (res && res.user && res.token) {
+        localStorage.setItem("token", res.token);
+        setUser(res.user);
+        setIsAuthenticated(true);
+        return { success: true };
+      } else {
+        return { success: false, error: "Invalid login response" };
       }
-
-      toast.success(`Welcome, ${foundUser.name}!`);
-      setIsLoading(false);
-      return true;
-    } else {
-      toast.error("Invalid email or password");
-      setIsLoading(false);
-      return false;
+    } catch (err) {
+      return {
+        success: false,
+        error:
+          err.message ||
+          "Login failed. Please check your credentials.",
+      };
     }
-  };
+  };  
 
-  const logout = () => {
+  // Logout function
+  const logout = async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch {
+      // ignore errors on logout
+    }
+    localStorage.removeItem("token");
+    delete api.defaults.headers.common["Authorization"];
     setUser(null);
-    localStorage.removeItem("user");
-    navigate("/login");
-    toast.info("You have been logged out");
+    setIsAuthenticated(false);
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: !!user,
-        login,
-        logout,
-        isLoading,
-      }}
-    >
+    <AuthContext.Provider value={{ user, isAuthenticated, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -96,44 +79,54 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuth = () => useContext(AuthContext);
 
-export const withRoleProtection = (Component, allowedRoles) => {
-  return () => {
-    const { user, isAuthenticated, isLoading } = useAuth();
-    const navigate = useNavigate();
+// --- withRoleProtection HOC ---
+export function withRoleProtection(WrappedComponent, allowedRoles = []) {
+  return (props) => {
+    const { user, loading } = useAuth();
 
-    useEffect(() => {
-      if (!isLoading && !isAuthenticated) {
-        navigate("/login");
-        return;
-      }
+    if (loading) return <div>Loading...</div>;
 
-      if (!isLoading && user && !allowedRoles.includes(user.role)) {
-        toast.error("You don't have permission to access this page");
-
-        if (user.role === "admin") {
-          navigate("/admin");
-        } else if (user.role === "delivery") {
-          navigate("/delivery");
-        } else if (user.role === "customer") {
-          navigate("/customer");
-        } else {
-          navigate("/login");
-        }
-      }
-    }, [isLoading, isAuthenticated, user, navigate]);
-
-    if (isLoading) {
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-pulse-slow">Loading...</div>
-        </div>
-      );
+    if (!user || !allowedRoles.includes(user.role)) {
+      return <Navigate to="/login" replace />;
     }
 
-    if (!isAuthenticated || (user && !allowedRoles.includes(user.role))) {
-      return null;
-    }
-
-    return <Component />;
+    return <WrappedComponent {...props} />;
   };
+}
+
+// --- Toast Hook & Component ---
+export const useToast = () => {
+  const [toast, setToast] = useState(null);
+
+  const showToast = useCallback((message, type = "info", duration = 3000) => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), duration);
+  }, []);
+
+  const ToastComponent = () =>
+    toast ? (
+      <div
+        style={{
+          position: "fixed",
+          bottom: 20,
+          right: 20,
+          padding: "10px 20px",
+          backgroundColor:
+            toast.type === "error"
+              ? "crimson"
+              : toast.type === "success"
+              ? "green"
+              : "gray",
+          color: "white",
+          borderRadius: 4,
+          boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+          zIndex: 1000,
+          userSelect: "none",
+        }}
+      >
+        {toast.message}
+      </div>
+    ) : null;
+
+  return { showToast, ToastComponent };
 };

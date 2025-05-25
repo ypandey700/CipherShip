@@ -1,11 +1,27 @@
-// === File: models/Package.js ===
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-const packageSchema = new mongoose.Schema({
-  encryptedData: { type: String, required: true },
-  qrCodeDataUrl: String,
-  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  deliveryStatus: { type: String, enum: ["Pending", "In Transit", "Delivered"], default: "Pending" },
+const PackageSchema = new mongoose.Schema({
+  encryptedData: {
+    type: String,
+    required: true,
+  },
+  assignedAgents: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    }
+  ],
+  status: {
+    type: String,
+    enum: ['pending', 'inTransit', 'delivered', 'failed'],
+    default: 'pending',
+  },
+  trackingNumber: {
+    type: String,
+  },
+}, {
+  timestamps: true, // adds createdAt and updatedAt fields
 });
 
-module.exports = mongoose.model("Package", packageSchema);
+module.exports = mongoose.model('Package', PackageSchema);

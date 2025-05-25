@@ -1,31 +1,34 @@
-// === File: routes/dashboardRoutes.js ===
 const express = require("express");
-const Package = require("../models/Package");
-const { authorizeRoles } = require("../middleware/auth");
 const router = express.Router();
+const { verifyToken, authorizeRoles } = require("../middleware/auth");
+const User = require("../models/User");
+const Package = require("../models/Package");
 
-// Admin dashboard: all packages
-router.get("/admin", authorizeRoles("admin"), async (req, res) => {
-  const packages = await Package.find();
-  res.json({ packages });
-});
+// GET /api/dashboard/admin/overview
+router.get(
+  "/admin/overview",
+  verifyToken,
+  authorizeRoles("admin"),
+  async (req, res) => {
+    try {
+      const totalUsers = await User.countDocuments();
+      const totalAgents = await User.countDocuments({ role: "agent" });
+      const totalPackages = await Package.countDocuments();
+      const packagesDelivered = await Package.countDocuments({ status: "delivered" });
+      const packagesPending = await Package.countDocuments({ status: "pending" });
 
-// Agent dashboard: packages assigned to agent (simplified logic)
-router.get("/agent", authorizeRoles("agent"), async (req, res) => {
-  const packages = await Package.find({ assignedTo: req.user.id });
-  res.json({ packages });
-});
-
-// Customer dashboard: fetch and decrypt own delivery info
-router.post("/customer/decrypt", authorizeRoles("customer"), async (req, res) => {
-  const { encryptedData } = req.body;
-  try {
-    const { decrypt } = require("../utils/cryptoUtil");
-    const decrypted = decrypt(encryptedData);
-    res.json({ decrypted });
-  } catch (err) {
-    res.status(400).json({ error: "Decryption failed" });
+      res.json({
+        totalUsers,
+        totalAgents,
+        totalPackages,
+        packagesDelivered,
+        packagesPending,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Server error" });
+    }
   }
-});
+);
 
 module.exports = router;

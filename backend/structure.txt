@@ -1,0 +1,40 @@
+.
+├── controllers
+│   ├── agentController.js
+│   ├── AuditController.js
+│   ├── CustomerController.js
+│   ├── OverviewController.js
+│   ├── PackageController.js
+│   ├── statusController.js
+│   └── UserController.js
+├── .env
+├── .gitignore
+├── middleware
+│   ├── adminOnly.js
+│   ├── agentOnly.js
+│   ├── authMiddleware.js
+│   ├── customerOnly.js
+│   └── errorHandler.js
+├── models
+│   ├── AuditLog.js
+│   ├── Package.js
+│   └── User.js
+├── package.json
+├── package-lock.json
+├── routes
+│   ├── adminRoutes.js
+│   ├── agentRoutes.js
+│   ├── authRoutes.js
+│   ├── CipherShip-clean.code-workspace
+│   ├── customerRoutes.js
+│   ├── dashboardRoutes.js
+│   ├── packageRoutes.js
+│   └── userRoutes.js
+├── server.js
+├── structure.txt
+└── utils
+    ├── api.js
+    ├── auditUtil.js
+    └── cryptoUtil.js
+
+5 directories, 32 files

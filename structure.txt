@@ -1,0 +1,87 @@
+.
+├── backend
+│   ├── controllers
+│   │   ├── agentController.js
+│   │   ├── AuditController.js
+│   │   ├── CustomerController.js
+│   │   ├── OverviewController.js
+│   │   ├── PackageController.js
+│   │   ├── statusController.js
+│   │   └── UserController.js
+│   ├── .env
+│   ├── .gitignore
+│   ├── middleware
+│   │   ├── adminOnly.js
+│   │   ├── agentOnly.js
+│   │   ├── authMiddleware.js
+│   │   ├── customerOnly.js
+│   │   └── errorHandler.js
+│   ├── models
+│   │   ├── AuditLog.js
+│   │   ├── Package.js
+│   │   └── User.js
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── routes
+│   │   ├── adminRoutes.js
+│   │   ├── agentRoutes.js
+│   │   ├── authRoutes.js
+│   │   ├── CipherShip-clean.code-workspace
+│   │   ├── customerRoutes.js
+│   │   ├── dashboardRoutes.js
+│   │   ├── packageRoutes.js
+│   │   └── userRoutes.js
+│   ├── server.js
+│   ├── structure.txt
+│   └── utils
+│       ├── api.js
+│       ├── auditUtil.js
+│       └── cryptoUtil.js
+├── frontend
+│   ├── .env
+│   ├── eslint.config.js
+│   ├── .gitignore
+│   ├── index.html
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── public
+│   │   └── vite.svg
+│   ├── README.md
+│   ├── src
+│   │   ├── App.css
+│   │   ├── App.jsx
+│   │   ├── assets
+│   │   │   └── react.svg
+│   │   ├── components
+│   │   │   ├── AddUserSheet.jsx
+│   │   │   ├── AuditLogs.jsx
+│   │   │   ├── AuditLogView.jsx
+│   │   │   ├── OverviewStats.jsx
+│   │   │   ├── PackageDetailView.jsx
+│   │   │   ├── QRGenerator.jsx
+│   │   │   ├── QRScanner.jsx
+│   │   │   ├── RoleBasedRoute.jsx
+│   │   │   └── UsersTable.jsx
+│   │   ├── contexts
+│   │   │   └── AuthContext.jsx
+│   │   ├── hooks
+│   │   │   ├── use-mobile.jsx
+│   │   │   └── useToast.js
+│   │   ├── index.css
+│   │   ├── lib
+│   │   │   └── utils.js
+│   │   ├── main.jsx
+│   │   └── pages
+│   │       ├── AdminDashboard.jsx
+│   │       ├── CustomerDashboard.jsx
+│   │       ├── DeliveryAgentDashboard.jsx
+│   │       ├── Index.jsx
+│   │       ├── Login.jsx
+│   │       └── NotFound.jsx
+│   ├── structure.txt
+│   └── vite.config.js
+├── .gitignore
+├── README.md
+└── structure.txt
+
+15 directories, 69 files

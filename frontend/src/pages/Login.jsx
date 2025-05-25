@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
+import { useAuth } from "../contexts/AuthContext";
 import { Eye, EyeOff, ArrowRight } from "lucide-react";
 
 const Login = () => {
@@ -12,58 +12,28 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { login, isAuthenticated } = useAuth();
+  const [error, setError] = useState(null);
+  const { login, isAuthenticated ,loading} = useAuth();
   const navigate = useNavigate();
 
   // Redirect to home if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
+    if (!loading && isAuthenticated) {
       navigate("/");
     }
-  }, [isAuthenticated, navigate]);
+  }, [loading, isAuthenticated, navigate]);
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
-    try {
-      await login(email, password);
-    } catch (error) {
-      console.error("Login error:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDemoLogin = async (role) => {
-    setIsLoading(true);
-    let demoEmail = "";
-    let demoPassword = "";
-
-    switch (role) {
-      case "admin":
-        demoEmail = "admin@example.com";
-        demoPassword = "admin123";
-        break;
-      case "delivery":
-        demoEmail = "delivery@example.com";
-        demoPassword = "delivery123";
-        break;
-      case "customer":
-        demoEmail = "customer@example.com";
-        demoPassword = "customer123";
-        break;
-      default:
-        break;
-    }
-
-    try {
-      await login(demoEmail, demoPassword);
-    } catch (error) {
-      console.error("Demo login error:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    const result = await login(email, password);
+if (!result.success) {
+  setError(result.error || "Invalid email or password");
+}
+    setIsLoading(false);
   };
 
   return (
@@ -110,6 +80,7 @@ const Login = () => {
                     type="button"
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />
@@ -119,6 +90,10 @@ const Login = () => {
                   </button>
                 </div>
               </div>
+
+              {error && (
+                <p className="text-red-600 text-sm mt-1 text-center">{error}</p>
+              )}
 
               <Button
                 type="submit"
@@ -131,56 +106,6 @@ const Login = () => {
                 )}
               </Button>
             </form>
-
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-muted"></div>
-              </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="bg-card px-2 text-muted-foreground">
-                  Demo Accounts
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-auto py-2"
-                onClick={() => handleDemoLogin("admin")}
-                disabled={isLoading}
-              >
-                <div className="flex flex-col items-center text-xs">
-                  <span className="font-medium">Admin</span>
-                  <span className="text-muted-foreground text-[10px]">Demo</span>
-                </div>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-auto py-2"
-                onClick={() => handleDemoLogin("delivery")}
-                disabled={isLoading}
-              >
-                <div className="flex flex-col items-center text-xs">
-                  <span className="font-medium">Delivery</span>
-                  <span className="text-muted-foreground text-[10px]">Demo</span>
-                </div>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-auto py-2"
-                onClick={() => handleDemoLogin("customer")}
-                disabled={isLoading}
-              >
-                <div className="flex flex-col items-center text-xs">
-                  <span className="font-medium">Customer</span>
-                  <span className="text-muted-foreground text-[10px]">Demo</span>
-                </div>
-              </Button>
-            </div>
           </CardContent>
 
           <CardFooter className="flex justify-center">
