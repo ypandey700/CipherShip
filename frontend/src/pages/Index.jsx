@@ -1,29 +1,30 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "../components/ui/button";
+import { useAuth } from "../contexts/AuthContext";
 import { ChevronRight, Package, QrCode, Shield } from "lucide-react";
 
 const Index = () => {
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect to appropriate dashboard if already logged in
   React.useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user?.role) {
       if (user.role === "admin") {
         navigate("/admin");
-      } else if (user.role === "delivery") {
-        navigate("/delivery");
+      } else if (user.role === "deliveryAgent") {
+        navigate("/deliveryAgent");
       } else if (user.role === "customer") {
         navigate("/customer");
       }
     }
-  }, [isAuthenticated, user, navigate]);
+    // ❌ No redirect for unauthenticated users
+  }, [isAuthenticated, user?.role, navigate]);
+  
+  const currentYear = new Date().getFullYear();
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Hero section */}
       <main className="flex-1 relative overflow-hidden">
         <div className="container mx-auto px-4 pt-32 pb-20 md:pt-40 md:pb-32 relative z-10">
           <div className="max-w-2xl mx-auto text-center animate-slide-in">
@@ -40,26 +41,26 @@ const Index = () => {
                 className="btn-primary gap-2 group"
               >
                 <span>Get Started</span>
-                <ChevronRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                <ChevronRight
+                  className="h-4 w-4 group-hover:translate-x-0.5 transition-transform"
+                  aria-hidden="true"
+                />
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Background elements - subtle branding */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-6xl h-64 bg-gradient-to-br from-blue-500/10 to-purple-500/10 blur-3xl rounded-full transform rotate-12 -z-10" />
         <div className="absolute bottom-0 right-0 w-1/2 h-96 bg-gradient-to-tr from-blue-500/10 to-transparent blur-3xl rounded-full transform -translate-y-1/4 -z-10" />
       </main>
 
-      {/* Features section */}
       <section className="py-20 bg-secondary/50">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-16">How It Works</h2>
-          
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             <div className="bg-background rounded-xl p-6 shadow-sm flex flex-col items-center text-center animate-fade-in">
               <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4">
-                <Shield className="h-8 w-8 text-primary" />
+                <Shield className="h-8 w-8 text-primary" aria-hidden="true" />
               </div>
               <h3 className="text-xl font-semibold mb-3">Admin</h3>
               <p className="text-muted-foreground">
@@ -67,9 +68,12 @@ const Index = () => {
               </p>
             </div>
             
-            <div className="bg-background rounded-xl p-6 shadow-sm flex flex-col items-center text-center animate-fade-in" style={{ animationDelay: "100ms" }}>
+            <div
+              className="bg-background rounded-xl p-6 shadow-sm flex flex-col items-center text-center animate-fade-in"
+              style={{ animationDelay: "100ms" }}
+            >
               <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4">
-                <Package className="h-8 w-8 text-primary" />
+                <Package className="h-8 w-8 text-primary" aria-hidden="true" />
               </div>
               <h3 className="text-xl font-semibold mb-3">Delivery Agent</h3>
               <p className="text-muted-foreground">
@@ -77,9 +81,12 @@ const Index = () => {
               </p>
             </div>
             
-            <div className="bg-background rounded-xl p-6 shadow-sm flex flex-col items-center text-center animate-fade-in" style={{ animationDelay: "200ms" }}>
+            <div
+              className="bg-background rounded-xl p-6 shadow-sm flex flex-col items-center text-center animate-fade-in"
+              style={{ animationDelay: "200ms" }}
+            >
               <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4">
-                <QrCode className="h-8 w-8 text-primary" />
+                <QrCode className="h-8 w-8 text-primary" aria-hidden="true" />
               </div>
               <h3 className="text-xl font-semibold mb-3">Customer</h3>
               <p className="text-muted-foreground">
@@ -90,10 +97,9 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="py-10 border-t">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© 2023 QR Delivery System. All rights reserved.</p>
+          <p>© {currentYear} QR Delivery System. All rights reserved.</p>
         </div>
       </footer>
     </div>

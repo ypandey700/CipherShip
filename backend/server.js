@@ -1,26 +1,54 @@
-// === File: server.js ===
-const express = require("express");
-const mongoose = require("mongoose");
-const dotenv = require("dotenv");
-const cors = require("cors");
-const packageRoutes = require("./routes/packageRoutes");
-const authRoutes = require("./routes/authRoutes");
-const dashboardRoutes = require("./routes/dashboardRoutes");
-const { authenticateUser } = require("./middleware/auth");
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
 
-dotenv.config();
+const adminRoutes = require('./routes/adminRoutes');
+const agentRoutes = require('./routes/agentRoutes');
+const authRoutes = require('./routes/authRoutes');
+const customerRoutes = require('./routes/customerRoutes');
+const packageRoutes = require('./routes/packageRoutes');
+
+const errorHandler = require('./middleware/errorHandler');
+
+// Import your models here to ensure indexes
+const User = require('./models/User');
+const Package = require('./models/Package');
+const AuditLog = require('./models/AuditLog');
+
 const app = express();
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-mongoose
-  .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection error:", err));
+// Connect to MongoDB and ensure indexes
+mongoose.connect(process.env.MONGO_URI)
+  .then(async () => {
+    console.log('MongoDB connected');
 
-app.use("/api/auth", authRoutes);
-app.use("/api/packages", packageRoutes);
-app.use("/api/dashboard", authenticateUser, dashboardRoutes);
+    // Ensure indexes for all models before starting server
+    await User.init();
+    await Package.init();
+    await AuditLog.init();
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    console.log('Indexes ensured');
+
+    // Start server only after DB ready
+    const PORT = process.env.PORT || 4000;
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  })
+  .catch(err => {
+    console.error('MongoDB connection error:', err);
+    process.exit(1);
+  });
+
+// Mount routes (after app initialization is fine)
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/agent', agentRoutes);
+app.use('/api/customer', customerRoutes);
+app.use('/api/packages', packageRoutes);
+
+// Centralized error handler
+app.use(errorHandler);
