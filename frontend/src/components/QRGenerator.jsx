@@ -54,7 +54,7 @@ const QRGenerator = () => {
 
     try {
       const res = await api.post("/admin/packages", form);
-      setQrData(res.data.encryptedPackageData); // backend sends this
+setQrData(res.encryptedPackageData);
       toast({ title: "Success", description: "QR code generated." });
       setForm({
         customerId: "",
@@ -63,11 +63,10 @@ const QRGenerator = () => {
         customerAddress: "",
         assignedAgents: []
       });
-    } catch {
+    } catch (err) {
+      console.error("QR generation failed", err); // <-- ADD THIS
       toast({ title: "Error", description: "Package creation failed." });
-    } finally {
-      setLoading(false);
-    }
+    }    
   };
 
   return (
@@ -139,11 +138,12 @@ const QRGenerator = () => {
       </form>
 
       {qrData && (
-        <div className="mt-6 text-center">
-          <p className="mb-2 font-medium">QR Code:</p>
-          <QRCodeCanvas value={qrData} size={256} />
-        </div>
-      )}
+  <div className="mt-6 text-center">
+    <p className="mb-2 font-medium">QR Code:</p>
+    <QRCodeCanvas value={qrData} size={256} />
+    <p className="text-xs mt-2 break-all">{qrData}</p>
+  </div>
+)}
     </div>
   );
 };

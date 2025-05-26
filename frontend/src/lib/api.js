@@ -3,7 +3,6 @@
 const handleUnauthorized = () => {
   // Clear token and redirect to login page
   localStorage.removeItem('token');
-  window.location.href = '/login';
 };
 
 const checkResponse = async (res) => {
@@ -11,7 +10,7 @@ const checkResponse = async (res) => {
     const errData = await res.json().catch(() => ({}));
     if (res.status === 401) {
       handleUnauthorized();
-      throw new Error('Unauthorized. Redirecting to login...');
+      throw new Error('Unauthorized');
     }
     throw new Error(errData.message || 'Request failed');
   }

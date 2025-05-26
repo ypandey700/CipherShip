@@ -16,6 +16,10 @@ const PackageSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  qrCode: {
+    type: String, // base64 string or a URL path
+    required: true,
+  },  
   assignedAgents: [
     {
       type: mongoose.Schema.Types.ObjectId,

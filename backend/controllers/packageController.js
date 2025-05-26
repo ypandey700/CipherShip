@@ -40,10 +40,12 @@ const createPackage = async (req, res, next) => {
     await AuditLog.create({
       user: req.user._id,
       userName: req.user.name,
+      agent: req.user._id, // required field
+      package: pkg._id,    // must be `package`, not `packageId`
       action: 'package_created',
-      packageId: pkg._id,
       details: `Package ${pkg._id} created and assigned to agents: ${assignedAgents.join(', ')}`,
     });
+    
 
     res.status(201).json({
       message: 'Package created',

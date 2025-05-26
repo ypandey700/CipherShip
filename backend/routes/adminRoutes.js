@@ -8,6 +8,8 @@ const {
   deleteUser
 } = require('../controllers/userController');
 
+const { getUserById, getUserPackages } = require('../controllers/adminController');
+
 const {
   createPackage,
   getAllPackages
@@ -37,5 +39,8 @@ router.get('/overview', getOverview);
 
 // Audit logs
 router.get('/audit-logs', getAuditLogs);
+
+router.get('/users/:id', getUserById);
+router.get('/users/:id/packages', getUserPackages);
 
 module.exports = router;

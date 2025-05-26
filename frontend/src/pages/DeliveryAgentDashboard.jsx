@@ -1,23 +1,22 @@
 import React, { useEffect, useState } from "react";
 import api from "../lib/api";
-import { Button } from "../components/ui/button";
-import { withRoleProtection } from "../contexts/AuthContext";
-import { useAuth } from "../contexts/AuthContext";
+// import { Button } from "../components/ui/button";
+import { withRoleProtection, useAuth } from "../contexts/AuthContext";
 import PackageDetailView from "../components/PackageDetailView";
 import AuditLogView from "../components/AuditLogView";
 import QRScanner from "../components/QRScanner";
-import { useToast } from "../hooks/useToast";
-console.log({ PackageDetailView, AuditLogView, QRScanner });
+
+console.log("PackageDetailView:", PackageDetailView);
+console.log("AuditLogView:", AuditLogView);
+console.log("QRScanner:", QRScanner);
 
 const DeliveryAgentDashboard = () => {
   const { token, logout, user } = useAuth();
-  const { showToast, ToastComponent } = useToast();
 
   const [packages, setPackages] = useState([]);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState("packages");
 
   useEffect(() => {
     const fetchPackages = async () => {
@@ -30,13 +29,13 @@ const DeliveryAgentDashboard = () => {
         setPackages(res.data);
       } catch {
         setError("Failed to fetch packages");
-        showToast("Failed to fetch packages", "error");
+        // Removed showToast call
       } finally {
         setLoading(false);
       }
     };
     if (token) fetchPackages();
-  }, [token, showToast]);
+  }, [token]);
 
   const onStatusUpdated = (newStatus) => {
     setPackages((prev) =>
@@ -45,7 +44,7 @@ const DeliveryAgentDashboard = () => {
       )
     );
     setSelectedPackage((prev) => ({ ...prev, status: newStatus }));
-    showToast(`Status updated to "${newStatus}"`, "success");
+    // Removed showToast call
   };
 
   return (
@@ -54,67 +53,54 @@ const DeliveryAgentDashboard = () => {
         <h1 className="text-2xl font-semibold">Delivery Agent Dashboard</h1>
         <div className="flex items-center space-x-4">
           <span className="font-medium">{user?.name}</span>
-          <Button variant="ghost" size="icon" onClick={logout}>
+          <button onClick={logout}>
             Logout
-          </Button>
+          </button>
         </div>
       </header>
 
-      <div className="mb-6 space-x-4">
-        <Button
-          variant={activeTab === "packages" ? "default" : "ghost"}
-          onClick={() => setActiveTab("packages")}
-        >
-          Packages
-        </Button>
-        <Button
-          variant={activeTab === "auditLogs" ? "default" : "ghost"}
-          onClick={() => setActiveTab("auditLogs")}
-        >
-          Delivery History
-        </Button>
-        <Button
-          variant={activeTab === "scan" ? "default" : "ghost"}
-          onClick={() => setActiveTab("scan")}
-        >
-          Scan QR
-        </Button>
-      </div>
+      {/* Packages Section */}
+      <section className="mb-12">
+        <h2 className="text-xl font-semibold mb-4">Packages</h2>
+        {loading && <p className="text-center text-blue-600">Loading packages...</p>}
+        {error && <p className="text-center text-red-600">{error}</p>}
 
-      {activeTab === "packages" && (
-        <>
-          {loading && <p className="text-center text-blue-600">Loading packages...</p>}
-          {error && <p className="text-center text-red-600">{error}</p>}
+        <ul className="mb-6">
+          {packages.map((pkg) => (
+            <li
+              key={pkg._id}
+              className={`cursor-pointer mb-2 p-2 rounded ${
+                selectedPackage?._id === pkg._id ? "font-bold bg-primary/20" : ""
+              }`}
+              onClick={() => setSelectedPackage(pkg)}
+            >
+              Package ID: {pkg._id} — Status: {pkg.status}
+            </li>
+          ))}
+        </ul>
 
-          <ul className="mb-6">
-            {packages.map((pkg) => (
-              <li
-                key={pkg._id}
-                className={`cursor-pointer mb-2 p-2 rounded ${
-                  selectedPackage?._id === pkg._id ? "font-bold bg-primary/20" : ""
-                }`}
-                onClick={() => setSelectedPackage(pkg)}
-              >
-                Package ID: {pkg._id} — Status: {pkg.status}
-              </li>
-            ))}
-          </ul>
+        {selectedPackage ? (
+          <PackageDetailView
+            pkg={selectedPackage}
+            token={token}
+            onStatusUpdated={onStatusUpdated}
+          />
+        ) : (
+          <p>Select a package to see details</p>
+        )}
+      </section>
 
-          {selectedPackage ? (
-            <PackageDetailView
-              pkg={selectedPackage}
-              token={token}
-              onStatusUpdated={onStatusUpdated}
-            />
-          ) : (
-            <p>Select a package to see details</p>
-          )}
-        </>
-      )}
+      {/* Delivery History Section */}
+      <section className="mb-12">
+        <h2 className="text-xl font-semibold mb-4">Delivery History</h2>
+        <AuditLogView token={token} />
+      </section>
 
-      {activeTab === "auditLogs" && <AuditLogView token={token} />}
-      {activeTab === "scan" && <QRScanner />}
-      <ToastComponent />
+      {/* Scan QR Section */}
+      <section>
+        <h2 className="text-xl font-semibold mb-4">Scan QR</h2>
+        <QRScanner />
+      </section>
     </div>
   );
 };

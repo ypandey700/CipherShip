@@ -1,18 +1,21 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import api from "../lib/api"; // ✅ Adjust path if necessary
+import api from "../lib/api";
 
 export default function CustomerDashboard() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   const [packages, setPackages] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingPackages, setLoadingPackages] = useState(true);
   const [error, setError] = useState(null);
 
-  // Role-based protection
+  // Redirect if unauthorized or not logged in
   useEffect(() => {
+    console.log("Redirect check", { user, loading });
+    if (loading) return; // wait for auth loading
+
     if (!user) {
       navigate("/login");
       return;
@@ -21,18 +24,18 @@ export default function CustomerDashboard() {
       navigate("/");
       return;
     }
-  }, [user, navigate]);
+  }, [user, loading, navigate]);
 
   const fetchPackages = useCallback(async () => {
-    setLoading(true);
+    setLoadingPackages(true);
     setError(null);
     try {
-      const data = await api.get("/customer/packages"); // ✅ Uses api.get
+      const data = await api.get("/customer/packages");
       setPackages(data.packages || []);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Failed to fetch packages");
     } finally {
-      setLoading(false);
+      setLoadingPackages(false);
     }
   }, []);
 
@@ -40,7 +43,7 @@ export default function CustomerDashboard() {
     fetchPackages();
   }, [fetchPackages]);
 
-  if (loading) return <div>Loading your packages...</div>;
+  if (loading || loadingPackages) return <div>Loading your packages...</div>;
 
   if (error) {
     return (

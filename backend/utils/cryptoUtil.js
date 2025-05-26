@@ -19,6 +19,7 @@ function encrypt(text) {
 // Decrypt ciphertext string formatted as "ivHex:cipherHex"
 function decrypt(encryptedData) {
   try {
+    console.log("Decrypt input:", encryptedData);
     const [ivHex, encryptedHex] = encryptedData.split(":");
     if (!ivHex || !encryptedHex) throw new Error("Invalid encrypted data format");
     const iv = Buffer.from(ivHex, "hex");
@@ -28,6 +29,7 @@ function decrypt(encryptedData) {
     const decrypted = Buffer.concat([decipher.update(encryptedText), decipher.final()]);
     return decrypted.toString("utf8");
   } catch (err) {
+    console.error("Decryption error:", err);
     throw new Error("Decryption failed: Invalid data or key");
   }
 }

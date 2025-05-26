@@ -1,59 +1,36 @@
 import React, { useState, useEffect } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
-import api from "../lib/api";
+import useDecryptPackage from "../hooks/useDecryptPackage";
 
 const QRScanner = () => {
   const [scannedData, setScannedData] = useState(null);
-  const [decryptedData, setDecryptedData] = useState(null);
-  const [error, setError] = useState("");
-  const [processing, setProcessing] = useState(false);
-
-  // Get token once on mount (or you can get from context)
-  const token = localStorage.getItem("token");
+  const { decryptPackage, decryptedData, loading, error } = useDecryptPackage();
 
   const onScanSuccess = async (decodedText) => {
-    if (processing) return; // Avoid multiple simultaneous calls
-    setProcessing(true);
-    setError("");
-    setDecryptedData(null);
+    if (loading) return; // Avoid multiple calls while processing
     setScannedData(null);
 
     let payload;
     try {
       payload = JSON.parse(decodedText);
     } catch {
-      setError("Invalid QR code format");
-      setProcessing(false);
+      // Handle invalid QR code format error inside hook? 
+      // Since hook only handles API errors, handle here instead:
+      alert("Invalid QR code format");
       return;
     }
 
     if (!payload.packageId || !payload.encryptedPayload) {
-      setError("Invalid QR code data");
-      setProcessing(false);
+      alert("Invalid QR code data");
       return;
     }
 
     setScannedData(payload);
-
-    try {
-      const res = await api.post(
-        "/packages/decrypt",
-        payload,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setDecryptedData(res.data.decryptedData);
-    } catch (err) {
-      if (err.response?.status === 403) setError("Unauthorized to view package");
-      else setError("Decryption failed or invalid QR code");
-    } finally {
-      setProcessing(false);
-    }
+    await decryptPackage(payload);
   };
 
   const onScanFailure = (error) => {
-    // Optionally log scan failures here or ignore
+    // Optional: log scan failures or ignore
   };
 
   useEffect(() => {
@@ -69,7 +46,7 @@ const QRScanner = () => {
     <div>
       <h2>Scan Package QR Code</h2>
       <div id="qr-reader" style={{ width: "300px" }}></div>
-      {processing && <p>Scanning and decrypting...</p>}
+      {loading && <p>Scanning and decrypting...</p>}
       {error && <p style={{ color: "red" }}>{error}</p>}
       {decryptedData && (
         <div>

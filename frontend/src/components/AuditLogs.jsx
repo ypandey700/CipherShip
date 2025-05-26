@@ -1,5 +1,3 @@
-import React from "react";
-
 const AuditLogs = ({ logs }) => {
   if (!logs) return <p className="text-center">No logs available.</p>;
   if (logs.length === 0) return <p className="text-center">No logs found.</p>;
@@ -18,9 +16,9 @@ const AuditLogs = ({ logs }) => {
         <tbody>
           {logs.map((log) => (
             <tr key={log._id} className="border-t text-sm">
-              <td className="px-4 py-2">{log.packageId}</td>
+              <td className="px-4 py-2">{log.package}</td>
               <td className="px-4 py-2">{log.action}</td>
-              <td className="px-4 py-2">{log.performedBy}</td>
+              <td className="px-4 py-2">{log.userName}</td>
               <td className="px-4 py-2">{new Date(log.timestamp).toLocaleString()}</td>
             </tr>
           ))}

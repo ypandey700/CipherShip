@@ -1,13 +1,19 @@
 const Package = require('../models/Package');
 const AuditLog = require('../models/AuditLog');
+const mongoose = require("mongoose");
 
 const listAssignedPackages = async (req, res) => {
   try {
-    // Use req.user._id for Mongo ObjectId consistency
-    const packages = await Package.find({ assignedAgents: req.user._id }).sort({ createdAt: -1 });
+    const agentId = new mongoose.Types.ObjectId(req.user._id); // ✅ Ensure it's an ObjectId
+    const packages = await Package.find({ assignedAgents: agentId }).sort({ createdAt: -1 });
+
+    console.log("Agent ID:", agentId.toString());
+    console.log("Packages found:", packages.length);
+
     res.json(packages);
   } catch (err) {
-    res.status(500).json({ message: 'Error fetching assigned packages' });
+    console.error("Error fetching assigned packages:", err);
+    res.status(500).json({ message: "Error fetching assigned packages" });
   }
 };
 

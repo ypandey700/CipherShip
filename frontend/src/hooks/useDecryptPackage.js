@@ -13,6 +13,8 @@ const useDecryptPackage = () => {
   const { showToast } = useToast();
 
   const decryptPackage = async ({ packageId, encryptedPayload }) => {
+    console.log('Calling decryptPackage with:', { packageId, encryptedPayload });
+  
     setLoading(true);
     setError(null);
     setDecryptedData(null);
@@ -22,8 +24,10 @@ const useDecryptPackage = () => {
         { packageId, encryptedPayload },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      console.log('Decryption response:', res.data);
       setDecryptedData(res.data.decryptedData);
     } catch (err) {
+      console.error('Decryption error:', err);
       if (err.response?.status === 403) {
         const msg = 'Unauthorized to view package.';
         setError(msg);

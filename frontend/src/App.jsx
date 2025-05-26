@@ -16,6 +16,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import DeliveryAgentDashboard from "./pages/DeliveryAgentDashboard";
 import CustomerDashboard from "./pages/CustomerDashboard";
 
+import UserProfile from "./pages/UserProfile";
+
 import NotFound from "./pages/NotFound"; // ✅ Fallback
 
 const queryClient = new QueryClient();
@@ -39,6 +41,14 @@ export default function App() {
                 element={
                   <RoleBasedRoute allowedRoles={["admin"]}>
                     <AdminDashboard />
+                  </RoleBasedRoute>
+                }
+              />
+              <Route
+                path="/admin/users/:id"
+                element={
+                  <RoleBasedRoute allowedRoles={["admin"]}>
+                    <UserProfile />
                   </RoleBasedRoute>
                 }
               />
