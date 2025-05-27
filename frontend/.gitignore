@@ -40,3 +40,4 @@ coverage/
 .DS_Store
 
 # Miscellaneous
+package-lock.json
