@@ -27,7 +27,6 @@ const DeliveryAgentDashboard = () => {
         description: "This dashboard is for delivery agents only.",
         variant: "destructive",
       });
-      return;
     }
   }, [user, navigate, toast]);
 
@@ -36,11 +35,12 @@ const DeliveryAgentDashboard = () => {
     setError("");
     try {
       const res = await api.get("/agent/packages", {
-        headers: { Authorization: Bearer ${token} },
+        headers: { Authorization: `Bearer ${token}` },
       });
       setPackages(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      const errorMsg = err.message || "Failed to fetch packages";
+      const errorMsg =
+        err.response?.data?.message || err.message || "Failed to fetch packages";
       setError(errorMsg);
       toast({
         title: "Error",
@@ -50,7 +50,7 @@ const DeliveryAgentDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [token, toast]);
+  }, [token]); // Removed toast from dependencies assuming it's stable
 
   useEffect(() => {
     if (token) fetchPackages();
@@ -65,7 +65,7 @@ const DeliveryAgentDashboard = () => {
     setSelectedPackage((prev) => ({ ...prev, status: newStatus }));
     toast({
       title: "Success",
-      description: Package status updated to ${newStatus}.,
+      description: `Package status updated to ${newStatus}.`,
       variant: "success",
     });
   };
@@ -152,7 +152,7 @@ const DeliveryAgentDashboard = () => {
                 }`}
                 onClick={() => setSelectedPackage(pkg)}
                 role="button"
-                aria-label={Select package ${pkg._id}}
+                aria-label={`Select package ${pkg._id}`}
               >
                 <p className="font-medium text-gray-100">Package ID: {pkg._id}</p>
                 <p className="text-sm text-gray-300 capitalize">Status: {pkg.status || "N/A"}</p>

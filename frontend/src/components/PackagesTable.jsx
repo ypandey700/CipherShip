@@ -46,7 +46,7 @@ const PackagesTable = ({ packages }) => {
                     <Button
                       onClick={() => setSelectedQR(pkg.encryptedData)}
                       className="bg-blue-500 text-white hover:bg-blue-400 font-semibold rounded-lg py-2 px-4 transition-all duration-200"
-                      aria-label={Show QR code for package ${pkg.packageId}}
+                      aria-label={`Show QR code for package ${pkg.packageId}`}
                     >
                       Show QR
                     </Button>

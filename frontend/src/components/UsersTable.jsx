@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../lib/api";
 import { Button } from "../components/ui/button";
@@ -11,12 +11,15 @@ const UsersTable = ({ users, onUserUpdated, onUserDeleted, onUserClick }) => {
   const [editingUser, setEditingUser] = useState(null);
 
   const handleDelete = async (id) => {
+    setLoading(true);
     try {
-      await api.delete(/admin/users/${id});
+      await api.delete(`/admin/users/${id}`);
       onUserDeleted(id);
       toast({ title: "Success", description: "User removed successfully", variant: "success" });
     } catch {
       toast({ title: "Error", description: "Failed to delete user", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -25,6 +28,14 @@ const UsersTable = ({ users, onUserUpdated, onUserDeleted, onUserClick }) => {
       <div className="flex items-center justify-center py-10">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-400"></div>
         <span className="ml-4 text-lg font-semibold text-gray-300">Loading users...</span>
+      </div>
+    );
+  }
+
+  if (!users || !Array.isArray(users)) {
+    return (
+      <div className="flex items-center justify-center py-10">
+        <span className="text-lg font-semibold text-gray-300">No users available</span>
       </div>
     );
   }
@@ -56,10 +67,10 @@ const UsersTable = ({ users, onUserUpdated, onUserDeleted, onUserClick }) => {
                 <td className="py-4 px-6 text-sm capitalize">{u.role}</td>
                 <td className="py-4 px-6 flex gap-3">
                   <Link
-                    to={/admin/users/${u._id}}
+                    to={`/admin/users/${u._id}`}
                     onClick={() => onUserClick(u._id)}
                     className="text-blue-400 hover:text-blue-300 font-medium underline transition-colors duration-200"
-                    aria-label={View profile of ${u.name}}
+                    aria-label={`View profile of ${u.name}`}
                   >
                     View
                   </Link>
@@ -67,7 +78,7 @@ const UsersTable = ({ users, onUserUpdated, onUserDeleted, onUserClick }) => {
                     variant="outline"
                     className="bg-gray-700 text-gray-100 border-gray-600 hover:bg-blue-500 hover:text-white transition-all duration-200"
                     onClick={() => setEditingUser(u)}
-                    aria-label={Edit user ${u.name}}
+                    aria-label={`Edit user ${u.name}`}
                   >
                     Edit
                   </Button>
@@ -75,7 +86,7 @@ const UsersTable = ({ users, onUserUpdated, onUserDeleted, onUserClick }) => {
                     variant="destructive"
                     className="bg-red-600 hover:bg-red-500 text-white transition-all duration-200"
                     onClick={() => handleDelete(u._id)}
-                    aria-label={Delete user ${u.name}}
+                    aria-label={`Delete user ${u.name}`}
                   >
                     Delete
                   </Button>
