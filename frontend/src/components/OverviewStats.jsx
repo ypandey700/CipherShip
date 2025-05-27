@@ -1,8 +1,8 @@
-import React from "react";
-import { motion } from "framer-motion";
+import React, { memo } from 'react';
+import { motion } from 'framer-motion';
 
 const OverviewStats = ({ overview }) => {
-  if (!overview) {
+  if (overview === null) {
     return (
       <motion.p
         initial={{ opacity: 0 }}
@@ -10,7 +10,7 @@ const OverviewStats = ({ overview }) => {
         transition={{ duration: 0.5 }}
         className="text-center text-gray-400 py-6"
       >
-        Loading stats...
+        No statistics available
       </motion.p>
     );
   }
@@ -30,17 +30,17 @@ const OverviewStats = ({ overview }) => {
   );
 };
 
-const StatCard = ({ label, value }) => (
+const StatCard = memo(({ label, value }) => (
   <motion.div
     whileHover={{ scale: 1.05 }}
     transition={{ duration: 0.2 }}
     className="bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl p-6 shadow-md text-center transition-all duration-200 hover:shadow-lg"
     role="region"
-    aria-label={${label} statistic}
+    aria-label={`${label} statistic`}
   >
     <p className="text-gray-300 text-sm font-medium uppercase tracking-wide">{label}</p>
     <p className="text-3xl font-extrabold text-white mt-2">{value}</p>
   </motion.div>
-);
+));
 
 export default OverviewStats;

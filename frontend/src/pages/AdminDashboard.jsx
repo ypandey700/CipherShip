@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext'; // Added for authorization
 import UsersTable from '../components/UsersTable';
 import AddUserSheet from '../components/AddUserSheet';
 import QRGenerator from '../components/QRGenerator';
@@ -11,6 +12,7 @@ import { toast } from 'react-toastify';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth(); // Added for authorization
   const [users, setUsers] = useState([]);
   const [packages, setPackages] = useState([]);
   const [overview, setOverview] = useState(null);
@@ -19,20 +21,28 @@ const AdminDashboard = () => {
   const [auditLoading, setAuditLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('users');
 
+  // Authorization check
+  useEffect(() => {
+    if (!user || user.role !== 'admin') {
+      navigate('/');
+      toast.error('Access denied: Admin role required');
+    }
+  }, [user, navigate]);
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       try {
         const [usersRes, overviewRes, packagesRes] = await Promise.all([
           api.get('/admin/users'),
-          api.get('/admin/overview'),
+          api.get('/admin-overview'),
           api.get('/admin/packages'),
         ]);
-        setUsers(usersRes.users || []);
-        setOverview(overviewRes || null);
-        setPackages(packagesRes.packages || []);
+        setUsers(Array.isArray(usersRes.data?.users) ? usersRes.data.users : []);
+        setOverview(overviewRes.data || null);
+        setPackages(Array.isArray(packagesRes.data?.packages) ? packagesRes.data.packages : []);
       } catch (error) {
-        toast.error('Failed to load admin data');
+        toast.error(error.response?.data?.message || 'Failed to load admin data');
         console.error(error);
       } finally {
         setLoading(false);
@@ -41,52 +51,55 @@ const AdminDashboard = () => {
     loadData();
   }, []);
 
-  const fetchAuditLogs = async () => {
+  const fetchAuditLogs = useCallback(async () => {
     setAuditLoading(true);
     try {
-      const auditRes = await api.get(/admin/audit-logs?ts=${Date.now()});
+      const auditRes = await api.get(`/admin/audit-logs?ts=${Date.now()}`);
       setAuditLogs(
-        Array.isArray(auditRes) ? auditRes : 
-        auditRes.auditLogs || auditRes.logs || []
+        Array.isArray(auditRes.data)
+          ? auditRes.data
+          : Array.isArray(auditRes.data?.auditLogs) || Array.isArray(auditRes.data?.logs)
+            ? auditRes.data.auditLogs || auditRes.data.logs
+            : []
       );
     } catch (error) {
-      toast.error('Failed to load audit logs');
+      toast.error(error.response?.data?.message || 'Failed to load audit logs');
       console.error(error);
     } finally {
       setAuditLoading(false);
     }
-  };
+  }, []);
 
-  const handleTabChange = (tab) => {
+  const handleTabChange = useCallback((tab) => {
     setActiveTab(tab);
     if (tab === 'audit') {
       fetchAuditLogs();
     }
-  };
+  }, [fetchAuditLogs]);
 
-  const handleUserCreated = (newUser) => {
+  const handleUserCreated = useCallback((newUser) => {
     setUsers((prev) => [...prev, newUser]);
     toast.success('User created successfully');
-  };
+  }, []);
 
-  const handleUserUpdated = (updatedUser) => {
+  const handleUserUpdated = useCallback((updatedUser) => {
     setUsers((prev) => prev.map((u) => (u._id === updatedUser._id ? updatedUser : u)));
     toast.success('User updated successfully');
-  };
+  }, []);
 
-  const handleUserDeleted = (userId) => {
+  const handleUserDeleted = useCallback((userId) => {
     setUsers((prev) => prev.filter((u) => u._id !== userId));
     toast.success('User deleted successfully');
-  };
+  }, []);
 
-  const handlePackageCreated = (newPackage) => {
+  const handlePackageCreated = useCallback((newPackage) => {
     setPackages((prev) => [...prev, newPackage]);
     toast.success('Package created successfully');
-  };
+  }, []);
 
-  const handleUserClick = (userId) => {
-    navigate(/admin/users/${userId});
-  };
+  const handleUserClick = useCallback((userId) => {
+    navigate(`/admin/users/${userId}`);
+  }, [navigate]);
 
   if (loading) {
     return (
