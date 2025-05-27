@@ -1,20 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
 import UsersTable from '../components/UsersTable';
 import AddUserSheet from '../components/AddUserSheet';
 import QRGenerator from '../components/QRGenerator';
 import OverviewStats from '../components/OverviewStats';
 import AuditLogs from '../components/AuditLogs';
 import PackagesTable from '../components/PackagesTable';
-
 import api from '../lib/api';
-
 import { toast } from 'react-toastify';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-
   const [users, setUsers] = useState([]);
   const [packages, setPackages] = useState([]);
   const [overview, setOverview] = useState(null);
@@ -24,7 +20,6 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('users');
 
   useEffect(() => {
-    // Load everything except audit logs on mount
     const loadData = async () => {
       setLoading(true);
       try {
@@ -33,9 +28,8 @@ const AdminDashboard = () => {
           api.get('/admin/overview'),
           api.get('/admin/packages'),
         ]);
-  
         setUsers(usersRes.users || []);
-        setOverview(overviewRes || null); // overviewRes is already parsed JSON
+        setOverview(overviewRes || null);
         setPackages(packagesRes.packages || []);
       } catch (error) {
         toast.error('Failed to load admin data');
@@ -44,14 +38,13 @@ const AdminDashboard = () => {
         setLoading(false);
       }
     };
-  
     loadData();
-  }, []);  
+  }, []);
 
   const fetchAuditLogs = async () => {
     setAuditLoading(true);
     try {
-      const auditRes = await api.get(`/admin/audit-logs?ts=${Date.now()}`);
+      const auditRes = await api.get(/admin/audit-logs?ts=${Date.now()});
       setAuditLogs(
         Array.isArray(auditRes) ? auditRes : 
         auditRes.auditLogs || auditRes.logs || []
@@ -62,7 +55,7 @@ const AdminDashboard = () => {
     } finally {
       setAuditLoading(false);
     }
-  };  
+  };
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -91,50 +84,74 @@ const AdminDashboard = () => {
     toast.success('Package created successfully');
   };
 
-  // New handler to navigate to user profile page
   const handleUserClick = (userId) => {
-    navigate(`/admin/users/${userId}`);
+    navigate(/admin/users/${userId});
   };
 
-  if (loading) return <div>Loading admin dashboard...</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-400"></div>
+        <span className="ml-4 text-lg font-semibold">Loading admin dashboard...</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="admin-dashboard p-4">
-      <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
-      <nav className="mb-4 space-x-2">
-        <button onClick={() => handleTabChange('users')} disabled={activeTab === 'users'}>
-          Users
-        </button>
-        <button onClick={() => handleTabChange('packages')} disabled={activeTab === 'packages'}>
-          Packages
-        </button>
-        <button onClick={() => handleTabChange('overview')} disabled={activeTab === 'overview'}>
-          Overview
-        </button>
-        <button onClick={() => handleTabChange('audit')} disabled={activeTab === 'audit'}>
-          Audit Logs
-        </button>
+    <div className="admin-dashboard min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-gray-100 p-6">
+      {/* Header */}
+      <h1 className="text-3xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+        Admin Dashboard
+      </h1>
+
+      {/* Navigation Tabs */}
+      <nav className="mb-8 flex justify-center space-x-4">
+        {['users', 'packages', 'overview', 'audit'].map((tab) => (
+          <button
+            key={tab}
+            className={`px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-300 ease-in-out transform hover:scale-105 ${
+              activeTab === tab
+                ? 'bg-blue-500 text-white shadow-lg'
+                : 'bg-gray-700 text-gray-300 hover:bg-blue-400 hover:text-white'
+            }`}
+            onClick={() => handleTabChange(tab)}
+            disabled={activeTab === tab}
+          >
+            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+          </button>
+        ))}
       </nav>
-      <section>
+
+      {/* Main Content */}
+      <section className="bg-gray-800 rounded-xl shadow-2xl p-6">
         {activeTab === 'users' && (
-          <>
+          <div className="space-y-6">
             <AddUserSheet onUserCreated={handleUserCreated} />
             <UsersTable
               users={users}
               onUserUpdated={handleUserUpdated}
               onUserDeleted={handleUserDeleted}
-              onUserClick={handleUserClick} // Pass the click handler
+              onUserClick={handleUserClick}
             />
-          </>
+          </div>
         )}
         {activeTab === 'packages' && (
-          <>
+          <div className="space-y-6">
             <QRGenerator onPackageCreated={handlePackageCreated} />
             <PackagesTable packages={packages} />
-          </>
+          </div>
         )}
         {activeTab === 'overview' && <OverviewStats overview={overview} />}
-        {activeTab === 'audit' && (auditLoading ? <p>Loading audit logs...</p> : <AuditLogs logs={auditLogs} />)}
+        {activeTab === 'audit' && (
+          auditLoading ? (
+            <div className="flex items-center justify-center py-10">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-400"></div>
+              <span className="ml-4 text-lg font-semibold">Loading audit logs...</span>
+            </div>
+          ) : (
+            <AuditLogs logs={auditLogs} />
+          )
+        )}
       </section>
     </div>
   );
