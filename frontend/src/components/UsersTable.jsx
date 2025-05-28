@@ -9,12 +9,11 @@ const UsersTable = () => {
   const { toast } = useToast();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editingUser, setEditingUser] = useState(null); // Moved this inside component
+  const [editingUser, setEditingUser] = useState(null);
 
   const fetchUsers = async () => {
     try {
       const users = await api.get("/admin/users");
-      console.log("Users:", users);
       setUsers(Array.isArray(users) ? users : []);
     } catch (err) {
       toast({ title: "Error", description: "Failed to load users" });
@@ -26,7 +25,7 @@ const UsersTable = () => {
   const handleDelete = async (id) => {
     try {
       await api.delete(`/admin/users/${id}`);
-      setUsers((prevUsers) => prevUsers.filter((user) => user._id !== id));
+      setUsers((prev) => prev.filter((u) => u._id !== id));
       toast({ title: "Deleted", description: "User removed successfully" });
     } catch {
       toast({ title: "Error", description: "Failed to delete user" });
@@ -37,38 +36,56 @@ const UsersTable = () => {
     fetchUsers();
   }, []);
 
-  if (loading) return <p>Loading users...</p>;
+  if (loading)
+    return (
+      <div className="py-10 text-center text-blue-700 font-medium text-lg animate-pulse">
+        Loading users...
+      </div>
+    );
 
   return (
-    <div className="overflow-x-auto mt-4">
-      <table className="min-w-full bg-white rounded shadow">
-        <thead>
-          <tr className="bg-gray-100 text-left">
-            <th className="py-2 px-4">ID</th>
-            <th className="py-2 px-4">Name</th>
-            <th className="py-2 px-4">Email</th>
-            <th className="py-2 px-4">Role</th>
-            <th className="py-2 px-4">Actions</th>
+    <div className="overflow-x-auto mt-4 rounded-2xl shadow-xl border border-blue-200 bg-white/80 backdrop-blur-md">
+      <table className="min-w-full text-sm text-blue-900">
+        <thead className="bg-gradient-to-r from-blue-100 via-blue-50 to-blue-100 text-blue-800 border-b border-blue-200">
+          <tr>
+            <th className="text-left py-4 px-6 font-semibold tracking-wide">ID</th>
+            <th className="text-left py-4 px-6 font-semibold tracking-wide">Name</th>
+            <th className="text-left py-4 px-6 font-semibold tracking-wide">Email</th>
+            <th className="text-left py-4 px-6 font-semibold tracking-wide">Role</th>
+            <th className="text-left py-4 px-6 font-semibold tracking-wide">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {users.map((u) => (
-            <tr key={u._id} className="border-t">
-              <td className="py-2 px-4">{u._id}</td>
-              <td className="py-2 px-4">{u.name}</td>
-              <td className="py-2 px-4">{u.email}</td>
-              <td className="py-2 px-4 capitalize">{u.role}</td>
-              <td className="py-2 px-4 flex gap-2">
+          {users.map((u, index) => (
+            <tr
+              key={u._id}
+              className={`border-t transition-all duration-300 ${
+                index % 2 === 0 ? "bg-white/60" : "bg-blue-50/40"
+              } hover:bg-blue-100/40`}
+            >
+              <td className="py-3 px-6 font-mono text-xs text-blue-700">{u._id}</td>
+              <td className="py-3 px-6 font-medium">{u.name}</td>
+              <td className="py-3 px-6">{u.email}</td>
+              <td className="py-3 px-6 capitalize text-indigo-700 font-semibold">
+                {u.role}
+              </td>
+              <td className="py-3 px-6 flex flex-wrap items-center gap-3">
                 <Link
                   to={`/admin/users/${u._id}`}
-                  className="btn-link text-blue-600 underline"
+                  className="text-blue-600 hover:text-blue-800 underline font-medium transition"
                 >
-                  View Profile
+                  View
                 </Link>
-                <Button variant="outline" onClick={() => setEditingUser(u)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="border-blue-500 text-blue-700 hover:bg-blue-100"
+                  onClick={() => setEditingUser(u)}
+                >
                   Edit
                 </Button>
                 <Button
+                  size="sm"
                   variant="destructive"
                   onClick={() => handleDelete(u._id)}
                 >
@@ -81,7 +98,7 @@ const UsersTable = () => {
       </table>
 
       {editingUser && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <EditUserForm
             user={editingUser}
             onClose={() => setEditingUser(null)}

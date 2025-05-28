@@ -1,4 +1,3 @@
-// frontend/src/components/AddUserSheet.jsx
 import React, { useState } from "react";
 import api from "../lib/api";
 import { useToast } from "../hooks/useToast";
@@ -24,13 +23,11 @@ const AddUserSheet = ({ onUserAdded }) => {
 
     try {
       const res = await api.post("/admin/users", form);
-
       toast({ title: "Success", description: "User created successfully." });
-
       setForm({ name: "", email: "", password: "", role: "customer" });
 
       if (onUserAdded && typeof onUserAdded === "function") {
-        onUserAdded(res.user); // Use res.user, not res.data
+        onUserAdded(res.user);
       }
     } catch (err) {
       toast({
@@ -45,9 +42,11 @@ const AddUserSheet = ({ onUserAdded }) => {
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white p-6 rounded-lg shadow-md max-w-md"
+      className="w-full max-w-lg bg-white/80 backdrop-blur-lg border border-blue-200 shadow-xl rounded-xl px-8 py-6 space-y-5 text-blue-900"
     >
-      <h2 className="text-xl font-semibold mb-4">Add New User</h2>
+      <h2 className="text-2xl font-bold tracking-tight text-blue-800 mb-4">
+        Add New User
+      </h2>
 
       <input
         type="text"
@@ -56,7 +55,7 @@ const AddUserSheet = ({ onUserAdded }) => {
         value={form.name}
         onChange={handleChange}
         required
-        className="w-full mb-3 p-2 border rounded"
+        className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
       />
 
       <input
@@ -66,7 +65,7 @@ const AddUserSheet = ({ onUserAdded }) => {
         value={form.email}
         onChange={handleChange}
         required
-        className="w-full mb-3 p-2 border rounded"
+        className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
       />
 
       <input
@@ -76,21 +75,25 @@ const AddUserSheet = ({ onUserAdded }) => {
         value={form.password}
         onChange={handleChange}
         required
-        className="w-full mb-3 p-2 border rounded"
+        className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
       />
 
       <select
         name="role"
         value={form.role}
         onChange={handleChange}
-        className="w-full mb-4 p-2 border rounded"
+        className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white text-blue-900 focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
       >
         <option value="customer">Customer</option>
-        <option value="deliveryAgent">Delivery Agent</option> {/* fixed role */}
-        <option value="admin">Admin</option> {/* optional, add if needed */}
+        <option value="deliveryAgent">Delivery Agent</option>
+        <option value="admin">Admin</option>
       </select>
 
-      <Button type="submit" disabled={loading} className="w-full">
+      <Button
+        type="submit"
+        disabled={loading}
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition duration-300"
+      >
         {loading ? "Creating..." : "Create User"}
       </Button>
     </form>

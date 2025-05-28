@@ -1,44 +1,63 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import useDecryptPackage from "../hooks/useDecryptPackage";
+import { useToast } from "../hooks/useToast";
 
 const QRScanner = () => {
+  const scannerRef = useRef(null);
+  const { decryptPackage, decryptedData, loading, error, clear } = useDecryptPackage();
+  const { showToast } = useToast();
   const [scannedData, setScannedData] = useState(null);
-  const { decryptPackage, decryptedData, loading, error } = useDecryptPackage();
 
   const onScanSuccess = async (decodedText) => {
-    if (loading) return; // Avoid multiple calls while processing
+    if (loading) return; // prevent multiple calls while processing
+
+    // Clear previous data before new scan
     setScannedData(null);
+    clear(); // Clear decryptedData and error inside hook if supported
 
     let payload;
     try {
       payload = JSON.parse(decodedText);
     } catch {
-      // Handle invalid QR code format error inside hook? 
-      // Since hook only handles API errors, handle here instead:
-      alert("Invalid QR code format");
+      showToast("Invalid QR code format", "error");
       return;
     }
 
     if (!payload.packageId || !payload.encryptedPayload) {
-      alert("Invalid QR code data");
+      showToast("Invalid QR code data", "error");
       return;
     }
 
     setScannedData(payload);
     await decryptPackage(payload);
+
+    // Optional: stop scanner after success to prevent repeat scans
+    if (scannerRef.current) {
+      scannerRef.current.clear().catch((err) => {
+        console.error("Failed to clear scanner:", err);
+      });
+    }
   };
 
   const onScanFailure = (error) => {
-    // Optional: log scan failures or ignore
+    // You can log or ignore scan failure (no QR detected)
+    // console.debug("QR scan failure", error);
   };
 
   useEffect(() => {
-    const scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 });
-    scanner.render(onScanSuccess, onScanFailure);
+    if (!scannerRef.current) {
+      scannerRef.current = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 });
+    }
+
+    scannerRef.current.render(onScanSuccess, onScanFailure);
 
     return () => {
-      scanner.clear().catch(() => {});
+      if (scannerRef.current) {
+        scannerRef.current.clear().catch((err) => {
+          console.error("Failed to clear scanner on unmount:", err);
+        });
+      }
     };
   }, []);
 

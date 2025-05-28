@@ -32,16 +32,10 @@ const EditUserForm = ({ user, onClose, onUserUpdated }) => {
       }
 
       const res = await api.put(`/admin/users/${user._id}`, payload);
-
-      // Log response to verify structure
-      console.log("Update response:", res);
-
-      // Assume res is the updated user object directly
       onUserUpdated(res);
 
       toast({ title: "Success", description: "User updated successfully." });
     } catch (err) {
-      console.error("Update user error:", err.message || err);
       toast({ title: "Error", description: "Failed to update user." });
     } finally {
       setLoading(false);
@@ -51,17 +45,17 @@ const EditUserForm = ({ user, onClose, onUserUpdated }) => {
   return (
     <form
       onSubmit={handleSubmit}
-      className="bg-white p-6 rounded-lg shadow-md w-full max-w-md relative"
+      className="relative bg-white/90 border border-gray-200 backdrop-blur-xl p-8 rounded-xl shadow-lg max-w-md w-full space-y-4"
     >
       <button
         onClick={onClose}
-        className="absolute top-2 right-3 text-gray-500 hover:text-black"
+        className="absolute top-3 right-4 text-gray-400 hover:text-gray-900 transition"
         type="button"
       >
         ✕
       </button>
 
-      <h2 className="text-xl font-semibold mb-4">Edit User</h2>
+      <h2 className="text-2xl font-semibold text-blue-900 mb-2">Edit User</h2>
 
       <input
         type="text"
@@ -70,7 +64,7 @@ const EditUserForm = ({ user, onClose, onUserUpdated }) => {
         value={form.name}
         onChange={handleChange}
         required
-        className="w-full mb-3 p-2 border rounded"
+        className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white/80"
       />
 
       <input
@@ -80,14 +74,14 @@ const EditUserForm = ({ user, onClose, onUserUpdated }) => {
         value={form.email}
         onChange={handleChange}
         required
-        className="w-full mb-3 p-2 border rounded"
+        className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white/80"
       />
 
       <select
         name="role"
         value={form.role}
         onChange={handleChange}
-        className="w-full mb-3 p-2 border rounded"
+        className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white/80"
       >
         <option value="customer">Customer</option>
         <option value="deliveryAgent">Delivery Agent</option>
@@ -100,10 +94,14 @@ const EditUserForm = ({ user, onClose, onUserUpdated }) => {
         placeholder="Leave blank to keep current password"
         value={form.password}
         onChange={handleChange}
-        className="w-full mb-4 p-2 border rounded"
+        className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 bg-white/80"
       />
 
-      <Button type="submit" disabled={loading} className="w-full">
+      <Button
+        type="submit"
+        disabled={loading}
+        className="w-full bg-blue-600 text-white hover:bg-blue-700 transition"
+      >
         {loading ? "Updating..." : "Update User"}
       </Button>
     </form>

@@ -22,16 +22,18 @@ const QRGenerator = () => {
   useEffect(() => {
     const fetchAgents = async () => {
       try {
-        const agents = await api.get("/admin/users?role=deliveryAgent");
+        const res = await api.get("/admin/users?role=deliveryAgent");
+        const agents = res.data || res;
         setAgentsList(agents);
         if (agents.length === 0) {
           toast({
             title: "Info",
             description: "No delivery agents found. Please add agents first.",
+            variant: "info",
           });
         }
       } catch {
-        toast({ title: "Error", description: "Failed to load agents" });
+        toast({ title: "Error", description: "Failed to load agents", variant: "error" });
       }
     };
     fetchAgents();
@@ -54,33 +56,48 @@ const QRGenerator = () => {
 
     try {
       const res = await api.post("/admin/packages", form);
-setQrData(res.encryptedPackageData);
-      toast({ title: "Success", description: "QR code generated." });
+      const data = res.data || res;
+      setQrData(data.encryptedPackageData);
+      toast({ title: "Success", description: "QR code generated.", variant: "success" });
       setForm({
         customerId: "",
         customerName: "",
         customerPhone: "",
         customerAddress: "",
-        assignedAgents: []
+        assignedAgents: [],
       });
     } catch (err) {
-      console.error("QR generation failed", err); // <-- ADD THIS
-      toast({ title: "Error", description: "Package creation failed." });
-    }    
+      console.error("QR generation failed", err);
+      toast({ title: "Error", description: "Package creation failed.", variant: "error" });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  return (
-    <div className="p-4 bg-white rounded shadow">
-      <h2 className="text-xl font-bold mb-4">Generate QR Code for Package</h2>
+  const noAgents = agentsList.length === 0;
 
-      <form onSubmit={handleSubmit} className="space-y-3">
+  return (
+    <div className="w-full max-w-lg bg-white/80 backdrop-blur-lg border border-blue-200 shadow-xl rounded-xl p-8 space-y-6 text-blue-900 mx-auto">
+      <h2 className="text-2xl font-bold tracking-tight mb-4 text-blue-800 text-center">
+        Generate QR Code for Package
+      </h2>
+
+      {noAgents && (
+        <p className="text-center text-red-600 font-medium">
+          No delivery agents available. Please add delivery agents first.
+        </p>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-5">
         <input
           name="customerId"
           placeholder="Customer ID"
           value={form.customerId}
           onChange={handleChange}
           required
-          className="w-full p-2 border rounded"
+          disabled={noAgents || loading}
+          className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
+          autoComplete="off"
         />
 
         <input
@@ -89,7 +106,9 @@ setQrData(res.encryptedPackageData);
           value={form.customerName}
           onChange={handleChange}
           required
-          className="w-full p-2 border rounded"
+          disabled={noAgents || loading}
+          className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
+          autoComplete="off"
         />
 
         <input
@@ -98,10 +117,12 @@ setQrData(res.encryptedPackageData);
           value={form.customerPhone}
           onChange={handleChange}
           required
-          className="w-full p-2 border rounded"
+          disabled={noAgents || loading}
           type="tel"
-          pattern="[0-9+()\\-\\s]{7,}"
+          pattern="[0-9+()\-\\s]{7,}"
           title="Enter a valid phone number"
+          className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
+          autoComplete="off"
         />
 
         <input
@@ -110,40 +131,59 @@ setQrData(res.encryptedPackageData);
           value={form.customerAddress}
           onChange={handleChange}
           required
-          className="w-full p-2 border rounded"
+          disabled={noAgents || loading}
+          className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
+          autoComplete="off"
         />
 
+        <label
+          htmlFor="assignedAgents"
+          className="block mb-1 font-medium text-blue-800"
+        >
+          Select Authorized Delivery Agents
+        </label>
         <select
+          id="assignedAgents"
           multiple
           value={form.assignedAgents}
           onChange={handleAgentSelect}
           required
-          className="w-full p-2 border rounded h-24"
+          disabled={noAgents || loading}
+          className="w-full px-4 py-2 rounded-lg border border-gray-300 h-28 bg-white text-blue-900 focus:ring-2 focus:ring-blue-400 focus:outline-none transition"
           aria-label="Select authorized delivery agents"
         >
-          {(agentsList || []).map((agent) => (
+          {agentsList.map((agent) => (
             <option key={agent._id} value={agent._id}>
               {agent.name} ({agent.email})
             </option>
           ))}
         </select>
+        <p className="text-xs text-blue-600 italic select-none mb-4">
+          Hold Ctrl (Cmd) to select multiple agents.
+        </p>
 
         <Button
           type="submit"
-          disabled={loading || (agentsList?.length || 0) === 0}
-          className="w-full"
+          disabled={loading || noAgents}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition duration-300"
         >
           {loading ? "Generating..." : "Generate QR"}
         </Button>
       </form>
 
       {qrData && (
-  <div className="mt-6 text-center">
-    <p className="mb-2 font-medium">QR Code:</p>
-    <QRCodeCanvas value={qrData} size={256} />
-    <p className="text-xs mt-2 break-all">{qrData}</p>
-  </div>
-)}
+        <div className="mt-8 text-center break-words">
+          <p className="mb-4 text-lg font-semibold text-blue-800">QR Code</p>
+          <QRCodeCanvas
+            value={qrData}
+            size={280}
+            className="mx-auto rounded-lg shadow-md"
+          />
+          <p className="mt-4 px-4 py-2 bg-blue-50 rounded text-sm select-all break-all">
+            {qrData}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

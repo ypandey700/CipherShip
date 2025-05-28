@@ -9,7 +9,6 @@ import AuditLogs from '../components/AuditLogs';
 import PackagesTable from '../components/PackagesTable';
 
 import api from '../lib/api';
-
 import { toast } from 'react-toastify';
 
 const AdminDashboard = () => {
@@ -24,7 +23,6 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('users');
 
   useEffect(() => {
-    // Load everything except audit logs on mount
     const loadData = async () => {
       setLoading(true);
       try {
@@ -33,9 +31,8 @@ const AdminDashboard = () => {
           api.get('/admin/overview'),
           api.get('/admin/packages'),
         ]);
-  
         setUsers(usersRes.users || []);
-        setOverview(overviewRes || null); // overviewRes is already parsed JSON
+        setOverview(overviewRes || null);
         setPackages(packagesRes.packages || []);
       } catch (error) {
         toast.error('Failed to load admin data');
@@ -44,17 +41,15 @@ const AdminDashboard = () => {
         setLoading(false);
       }
     };
-  
     loadData();
-  }, []);  
+  }, []);
 
   const fetchAuditLogs = async () => {
     setAuditLoading(true);
     try {
       const auditRes = await api.get(`/admin/audit-logs?ts=${Date.now()}`);
       setAuditLogs(
-        Array.isArray(auditRes) ? auditRes : 
-        auditRes.auditLogs || auditRes.logs || []
+        Array.isArray(auditRes) ? auditRes : auditRes.auditLogs || auditRes.logs || []
       );
     } catch (error) {
       toast.error('Failed to load audit logs');
@@ -62,13 +57,11 @@ const AdminDashboard = () => {
     } finally {
       setAuditLoading(false);
     }
-  };  
+  };
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    if (tab === 'audit') {
-      fetchAuditLogs();
-    }
+    if (tab === 'audit') fetchAuditLogs();
   };
 
   const handleUserCreated = (newUser) => {
@@ -91,53 +84,113 @@ const AdminDashboard = () => {
     toast.success('Package created successfully');
   };
 
-  // New handler to navigate to user profile page
   const handleUserClick = (userId) => {
     navigate(`/admin/users/${userId}`);
   };
 
-  if (loading) return <div>Loading admin dashboard...</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-sky-100 via-blue-50 to-slate-100 text-blue-900 text-lg font-medium">
+        Loading Admin Dashboard...
+      </div>
+    );
+  }
 
   return (
-    <div className="admin-dashboard p-4">
-      <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
-      <nav className="mb-4 space-x-2">
-        <button onClick={() => handleTabChange('users')} disabled={activeTab === 'users'}>
-          Users
-        </button>
-        <button onClick={() => handleTabChange('packages')} disabled={activeTab === 'packages'}>
-          Packages
-        </button>
-        <button onClick={() => handleTabChange('overview')} disabled={activeTab === 'overview'}>
-          Overview
-        </button>
-        <button onClick={() => handleTabChange('audit')} disabled={activeTab === 'audit'}>
-          Audit Logs
-        </button>
-      </nav>
-      <section>
-        {activeTab === 'users' && (
-          <>
-            <AddUserSheet onUserCreated={handleUserCreated} />
-            <UsersTable
-              users={users}
-              onUserUpdated={handleUserUpdated}
-              onUserDeleted={handleUserDeleted}
-              onUserClick={handleUserClick} // Pass the click handler
-            />
-          </>
-        )}
-        {activeTab === 'packages' && (
-          <>
-            <QRGenerator onPackageCreated={handlePackageCreated} />
-            <PackagesTable packages={packages} />
-          </>
-        )}
-        {activeTab === 'overview' && <OverviewStats overview={overview} />}
-        {activeTab === 'audit' && (auditLoading ? <p>Loading audit logs...</p> : <AuditLogs logs={auditLogs} />)}
-      </section>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-100 to-emerald-50 px-6 py-10">
+      <div className="max-w-[1440px] mx-auto space-y-12">
+        {/* Header */}
+        <header className="flex items-center justify-between">
+          <h1 className="text-4xl font-bold text-blue-900 tracking-tight">Admin Dashboard</h1>
+        </header>
+
+        {/* Tab Navigation */}
+        <nav className="flex gap-4 border-b border-slate-300 pb-1">
+          {['users', 'packages', 'overview', 'audit'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => handleTabChange(tab)}
+              className={`relative text-sm font-semibold px-5 py-2 rounded-md transition-all duration-200 ${
+                activeTab === tab
+                  ? 'text-blue-800 bg-white border border-blue-300 shadow-sm'
+                  : 'text-slate-600 hover:text-blue-700 hover:bg-slate-100'
+              }`}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {activeTab === tab && (
+                <span className="absolute left-1/2 -bottom-1 w-1/2 h-1 bg-blue-500 rounded-full -translate-x-1/2"></span>
+              )}
+            </button>
+          ))}
+        </nav>
+
+        {/* Main Content */}
+        <section className="bg-white rounded-2xl shadow-xl border border-slate-200 p-10 space-y-10">
+          {activeTab === 'users' && (
+            <>
+              <SectionHeader icon="👥" title="User Management" />
+              <SectionCard background="bg-gradient-to-br from-blue-50 to-sky-100">
+                <AddUserSheet onUserCreated={handleUserCreated} />
+              </SectionCard>
+              <UsersTable
+                users={users}
+                onUserUpdated={handleUserUpdated}
+                onUserDeleted={handleUserDeleted}
+                onUserClick={handleUserClick}
+              />
+            </>
+          )}
+
+          {activeTab === 'packages' && (
+            <>
+              <SectionHeader icon="📦" title="Package Control" />
+              <SectionCard background="bg-gradient-to-br from-emerald-50 to-teal-100">
+                <QRGenerator onPackageCreated={handlePackageCreated} />
+              </SectionCard>
+              <PackagesTable packages={packages} />
+            </>
+          )}
+
+          {activeTab === 'overview' && (
+            <>
+              <SectionHeader icon="📊" title="System Overview" />
+              <SectionCard background="bg-gradient-to-br from-indigo-50 to-blue-100">
+                <OverviewStats overview={overview} />
+              </SectionCard>
+            </>
+          )}
+
+          {activeTab === 'audit' && (
+            <>
+              <SectionHeader icon="📜" title="Audit Logs" />
+              <SectionCard background="bg-gradient-to-br from-slate-50 to-gray-100">
+                {auditLoading ? (
+                  <p className="text-blue-700 animate-pulse text-base font-medium">Loading logs...</p>
+                ) : (
+                  <AuditLogs logs={auditLogs} />
+                )}
+              </SectionCard>
+            </>
+          )}
+        </section>
+      </div>
     </div>
   );
 };
+
+// Reusable Section Header
+const SectionHeader = ({ icon, title }) => (
+  <div className="flex items-center gap-2 text-blue-900">
+    <span className="text-2xl">{icon}</span>
+    <h2 className="text-2xl font-semibold">{title}</h2>
+  </div>
+);
+
+// Reusable Section Card Wrapper
+const SectionCard = ({ children, background = 'bg-white' }) => (
+  <div className={`${background} border border-slate-200 rounded-xl p-6 shadow-inner`}>
+    {children}
+  </div>
+);
 
 export default AdminDashboard;
